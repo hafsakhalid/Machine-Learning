@@ -5,12 +5,12 @@ import csv
 import pandas as pd 
 from numpy import array
 
+
 class LogisticRegression:
 
 	def __init__(self, rate, iterations):
 		self.rate = rate
-		self.iterations = iterations
-		
+		self.iterations = iterations		
 
 	def sigmoid (self, x):
 		return 1/(1 + (np.exp(-x)))
@@ -18,66 +18,50 @@ class LogisticRegression:
 	def loss(self, sigmoid, y):
 		return (-y * np.log(sigmoid) + (1 - y) * np.log(1 - sigmoid)).mean()
 
-	def gradient_descent (self, X, Y, sigmoid):
-		return (np.dot(X.T, (Y - sigmoid).T)).mean()
-
-	def update (self, weights, rate, gradient):
-
-		return weights - rate * gradient
-
 	def fit (self, X, Y):
-		self.weights = np.zeros(X.shape[1])
+		self.weights = np.array([np.zeros(X.shape[1])])
 
-		
-		for i in range(self.iterations):
-	
-			
-			s = self.sigmoid(np.dot(self.weights, X.T))
-			gradient = self.gradient_descent(X, Y, s)
-			self.weights = self.update(self.weights, self.rate, gradient)
-		
-		return self.weights
-	
+		for _ in range(self.iterations):
+			total_loss = 0
+
+			for i in range(X.shape[0]):
+				delta = self.sigmoid(Y[i] - np.dot(self.weights, X[i]))
+				total_loss = np.add(total_loss, X[i] * delta)
+			self.weights = self.weights + self.rate * total_loss
+
 
 	def predict(self, X):
 		outputs = []
-		for i in range(outputs.size):
-			print(self.sigmoid(np.dot(self.weights, X.T)))
-			print(self.sigmoid(np.dot(self.weights, X.T).shape))
-			if self.sigmoid(np.dot(self.weights, X.T)) > 0.5:
+		for x in X:
+			print(np.dot(self.weights, x))
+			print(self.sigmoid(np.dot(self.weights, x)))
+			r = self.sigmoid(np.dot(self.weights, x))
+			if  r > 0.5:
 				outputs.append(1)
 			else:
 				outputs.append(0)
+
 		return outputs
 
 with open ('winequality-red.csv', 'r') as f: 
 	wines = list(csv.reader(f, delimiter=';'))
 	wines = np.array(wines[1:], dtype = np.float)
+
 	quality = np.array(wines[:,11], dtype = np.float) 
 	df = pd.DataFrame(quality, columns = ['quality'])
 	df.loc[df.quality <=5, 'binary classification'] = 0 
 	df.loc[df.quality  >5, 'binary classification'] = 1
+
 	numpy_matrix = df.as_matrix()
 	#print(numpy_matrix)
 	binaryclassification = (numpy_matrix[:,1])
-	y = np.array([binaryclassification])
+	y = np.array(binaryclassification)
 
-	
-	
 	X = wines
-	
-	weights = np.zeros((12, 1), dtype=np.float)
-	
 
-	rate = 0.01
-	iterations = 100
+	rate = 0.1
+	iterations = 1000
 
 	model = LogisticRegression(rate, iterations)
-	model.fit(wines, y)
+	model.fit(X, y)
 	results = model.predict(wines)
-
-
-   
-   
-    
-
