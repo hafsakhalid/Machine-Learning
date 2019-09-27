@@ -19,30 +19,35 @@ class LogisticRegression:
 		return (-y * np.log(sigmoid) + (1 - y) * np.log(1 - sigmoid)).mean()
 
 	def gradient_descent (self, X, Y, sigmoid):
-		return (np.dot(X.T, (Y - sigmoid).T))
+		return (np.dot(X.T, (Y - sigmoid).T)).mean()
 
 	def update (self, weights, rate, gradient):
+
 		return weights - rate * gradient
 
 	def fit (self, X, Y):
 		self.weights = np.zeros(X.shape[1])
 
-
+		
 		for i in range(self.iterations):
+	
+			
 			s = self.sigmoid(np.dot(self.weights, X.T))
 			gradient = self.gradient_descent(X, Y, s)
 			self.weights = self.update(self.weights, self.rate, gradient)
+		
 		return self.weights
 	
 
 	def predict(self, X):
-		outputs = np.zeros(X.shape[1])
+		outputs = []
 		for i in range(outputs.size):
-			print(self.weights)
+			print(self.sigmoid(np.dot(self.weights, X.T)))
+			print(self.sigmoid(np.dot(self.weights, X.T).shape))
 			if self.sigmoid(np.dot(self.weights, X.T)) > 0.5:
-				outputs[i] = 1
+				outputs.append(1)
 			else:
-				outputs[i] = 0
+				outputs.append(0)
 		return outputs
 
 with open ('winequality-red.csv', 'r') as f: 
