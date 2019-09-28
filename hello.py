@@ -23,19 +23,20 @@ class LogisticRegression:
 
 		for _ in range(self.iterations):
 			total_loss = 0
-
+			
 			for i in range(X.shape[0]):
 				delta = self.sigmoid(Y[i] - np.dot(self.weights, X[i]))
 				total_loss = np.add(total_loss, X[i] * delta)
-			self.weights = self.weights + self.rate * total_loss
-
+			
+			self.weights = np.add(self.weights, self.rate * total_loss)
+		return self.weights
 
 	def predict(self, X):
 		outputs = []
 		for x in X:
-			print(np.dot(self.weights, x))
-			print(self.sigmoid(np.dot(self.weights, x)))
+			print(self.weights)
 			r = self.sigmoid(np.dot(self.weights, x))
+			
 			if  r > 0.5:
 				outputs.append(1)
 			else:
@@ -59,9 +60,10 @@ with open ('winequality-red.csv', 'r') as f:
 
 	X = wines
 
-	rate = 0.1
-	iterations = 1000
+	rate = 0.0001
+	iterations = 10
 
 	model = LogisticRegression(rate, iterations)
-	model.fit(X, y)
+	print(model.fit(X, y))
 	results = model.predict(wines)
+	
