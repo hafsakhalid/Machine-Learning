@@ -1,0 +1,62 @@
+import sys 
+import numpy as np 
+import matplotlib.pyplot as mpl 
+import csv 
+import pandas as pd 
+from numpy import array
+import math
+import random
+
+
+class LogisticRegression:
+
+	def __init__(self, rate, iterations):
+		self.rate = rate
+		self.iterations = iterations		
+
+	def sigmoid(self, x):
+
+		if x >= 0:
+			z = np.exp(-x)
+			return 1 / (1 + z)
+		else:
+			# if x is less than zero then z will be small, denom can't be
+			# zero because it's 1+z.
+			z = np.exp(x)
+			return z / (1 + z)
+
+	def loss(self, sigmoid, y):
+		return (-y * np.log(sigmoid) + (1 - y) * np.log(1 - sigmoid)).mean()
+
+	def fit (self, X, Y, weights):
+		news = weights
+		for _ in range(self.iterations):
+			total_loss = np.zeros_like(weights)
+			weights = news
+
+			for i in range(len(X)):
+				difference = Y[i] - self.sigmoid(np.dot(weights, X[i]))
+				total_loss = np.add(total_loss, X[i] * difference)
+			
+			news = np.add(weights, self.rate * total_loss)
+			
+		return news
+
+	def predict(self, X, weights):
+		outputs = []
+
+		for x in X:
+			r = self.sigmoid(np.dot(weights, x))
+			
+			if  r > 0.5:
+				outputs.append(1)
+			else:
+				outputs.append(0)
+		return outputs
+
+	def evaluate_acc(self, true, predictions):
+		correct = 0
+		for i in range(len(true)):
+			if true[i] == predictions[i]:
+				correct += 1
+		return correct/len(true)
