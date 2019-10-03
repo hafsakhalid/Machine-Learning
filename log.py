@@ -1,8 +1,8 @@
-import sys 
-import numpy as np 
-import matplotlib.pyplot as mpl 
-import csv 
-import pandas as pd 
+import sys
+import numpy as np
+import matplotlib.pyplot as mpl
+import csv
+import pandas as pd
 from numpy import array
 import math
 import random
@@ -15,15 +15,9 @@ class LogisticRegression:
 		self.iterations = iterations		
 
 	def sigmoid(self, x):
+		z = np.exp(-x)
+		return 1 / (1 + z)
 
-		if x >= 0:
-			z = np.exp(-x)
-			return 1 / (1 + z)
-		else:
-			# if x is less than zero then z will be small, denom can't be
-			# zero because it's 1+z.
-			z = np.exp(x)
-			return z / (1 + z)
 
 	def loss(self, sigmoid, y):
 		return (-y * np.log(sigmoid) + (1 - y) * np.log(1 - sigmoid)).mean()
@@ -45,13 +39,15 @@ class LogisticRegression:
 	def predict(self, X, weights):
 		outputs = []
 
-		for x in X:
-			r = self.sigmoid(np.dot(weights, x))
-			
+		for i in range(len(X)):
+			r = self.sigmoid(np.dot(weights, X[i]))
+			print(r)
 			if  r > 0.5:
 				outputs.append(1)
+			
 			else:
 				outputs.append(0)
+	
 		return outputs
 
 	def evaluate_acc(self, true, predictions):

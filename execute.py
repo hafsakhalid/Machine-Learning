@@ -6,6 +6,7 @@ from numpy import array
 import math
 import random
 import time
+from numpy import genfromtxt
 from log import *
 from lda import *
 
@@ -19,9 +20,30 @@ with open ('winequality-red.csv', 'r') as f:
 # df.loc[df.quality <=5, 'binary classification'] = 0 
 # df.loc[df.quality  >5, 'binary classification'] = 1
 	
+	
+
+
 	df = pd.read_csv('winequality-red.csv', delimiter=';')
 	features = np.array(df.columns)
 	feature_arrays = []
+
+
+	qualities = df["quality"]
+	# qualitiesdf = pd.DataFrame(qualities)
+	# print(qualitiesdf)
+	
+	
+
+	sub_df = df.copy()
+	del sub_df ['quality']
+	#print(sub_df)
+	qualities_df = df.iloc[:,-1]
+	qualities_alt = df[['quality']].copy()
+	#sub_df = df.iloc[:,0:11].apply(lambda x: (x - np.mean(x)) / (np.max(x) - np.min(x)))
+	#print(sub_df.shape)
+	#print(qualities_alt.shape)
+	#df = sub_df.join(qualities_alt)
+	print(df) 
 
 	for i in features:
 		feature_arrays.append(np.array(df[i]))
@@ -37,7 +59,11 @@ with open ('winequality-red.csv', 'r') as f:
 			# 	matrix = np.column_stack(([1] * len(feature_arrays[0]), matrix))
 
 
-	binaryclassification = np.copy((matrix[:,-1]))
+	
+	#print(matrix)
+	binaryclassification = np.copy((qualities))
+
+
 
 	for i in range(len(binaryclassification)):
 		if binaryclassification[i] > 5.0:
@@ -47,7 +73,9 @@ with open ('winequality-red.csv', 'r') as f:
 
 	y = binaryclassification
 
-	X = matrix
+
+	X = matrix 
+
 	k = 5
 
 	def split(X, k):
@@ -69,22 +97,37 @@ with open ('winequality-red.csv', 'r') as f:
 			it += 1
 		return folds
 
-	rate = 0.0001
-	iterations = 10
-	weights = [1] * len(matrix[0])
+	rate = 0.01
+	iterations = 20
+	weights = [1] * len(X[0])
+	
 
 	k = 3
+
+
+
 	folds = split(X, k)
 
-	log_results = np.zeros(12)
-	log_results = np.reshape(log_results, (12, 1))
+	
+	
 
 	lda_results = np.zeros(5)
+
+	model = LogisticRegression(rate, iterations)
+	new_weights = model.fit(X, y, weights)
+	
+	all_acc = []
+	all_acc.append((weights, 0.1))
+
+
+
+
 
 	for i in range(k):
 		t_set = np.zeros((0, 12))
 		v_set = np.zeros((0, 12))
 		v_set = np.append(v_set, folds[i], 0)
+		
 		
 		for j in range(k):
 			if j != i:
@@ -98,51 +141,67 @@ with open ('winequality-red.csv', 'r') as f:
 			else:
 				t_set_outputs[i] = 0
 
+		
 		v_set_outputs = np.copy((v_set[:,-1]))
+		#print(v_set_outputs)
+		
 		for i in range(len(v_set_outputs)):
 			if v_set_outputs[i] > 5.0:
 				v_set_outputs[i] = 1
 			else:
 				v_set_outputs[i] = 0
+		
 
 		log_model = LogisticRegression(rate, iterations)
 
-		new_weights = log_model.fit(t_set, t_set_outputs, weights)
-		new_weights = np.reshape(new_weights, (12, 1))
+		t_set_norm = t_set / t_set.max(axis = 0)
+		v_set_norm = v_set / v_set.max(axis = 0)
 		
+		new_weights = log_model.fit(t_set_norm, t_set_outputs, weights)
+		print("New Weights: {}".format(new_weights))
 
-		log_results = np.append(log_results, new_weights, axis=1)
+		print("Validation Set Shape: {}".format(v_set.shape))
+		print("Validation Set: {}".format(v_set_norm))
+		log_projections = log_model.predict(v_set_norm, new_weights)
+		print("Predictions: {}".format(log_projections))
+
+		new_acc = log_model.evaluate_acc(v_set_outputs, log_projections)
+		print("New Accuracy: {}".format(new_acc))
 		
-		
+		all_acc.append((new_weights, new_acc))
+
 		lda_model = LDA()
-		
-		lda_values = lda_model.fit(t_set, t_set_outputs)
-
+		lda_values = lda_model.fit(t_set_norm, t_set_outputs)
 		lda_results = np.append(lda_results, lda_values)
-		
+
+
+	for i in range(len(all_acc)):
+		max = 0
+		if all_acc[i][1] > max:
+			max = all_acc[i]
 	
-	log_results = np.delete(log_results, 0, axis=1)
-	print(log_results)
-	log_results_avg = log_results.mean(axis = 1)
+	print("Max Accuracy: ".format(max[1]))
+
+	best_weights = log_model.fit(X, y, max[0])
+	best_projections = log_model.predict(X, best_weights)
+	best_acc = log_model.evaluate_acc(y, best_projections)
+
+	other_projections = log_model.predict(X, max[0])
+	other_acc = log_model.evaluate_acc(y, other_projections)
 	
+	
+
+
 	lda_results_avg = lda_results.mean()
 
-	
 
-
-	print(v_set)
-	print(v_set_outputs)
-	print(log_results_avg)
-	log_projections = log_model.predict(v_set, log_results_avg)
 	
-	
-	log_accuracy = log_model.evaluate_acc(v_set_outputs, log_projections)
 	
 	log_start = time.time()
 	log_model = LogisticRegression(rate, iterations)
 	new_weights = log_model.fit(t_set, t_set_outputs, weights)
-	log_projections = log_model.predict(X, new_weights)
-	log_accuracy = log_model.evaluate_acc(t_set_outputs, log_projections)
+	log_projections = log_model.predict(v_set, new_weights)
+	log_accuracy = log_model.evaluate_acc(v_set_outputs, log_projections)
 	log_end = time.time()
 	log_time = log_end - log_start 
 
@@ -157,16 +216,16 @@ with open ('winequality-red.csv', 'r') as f:
 	lda_accuracy = lda_model.evaluate_acc(lda_projections, t_set_outputs)
 
 	
-	print("LDA Accuracy: {lda_accuracy}")
+	print("LDA Accuracy: {}").format(lda_accuracy)
 		
 
 
 
-# 	model = LogisticRegression(rate, iterations)
-# 	new_weights = model.fit(X, y, weights)
+	model = LogisticRegression(rate, iterations)
+	new_weights = model.fit(X, y, weights)
 
-# 	results = model.predict(matrix, new_weights)
-# 	print(model.evaluate_acc(y, results))
+	results = model.predict(matrix, new_weights)
+	print(model.evaluate_acc(y, results))
 	
 # lda_model = LDA()
 # values = lda_model.fit(X, y)
